@@ -9,7 +9,7 @@ const getDashboardStats = async () => {
 
   const providers = await pool.query(`
     SELECT COUNT(*)::int AS count
-    FROM providers
+    FROM provider_profiles
   `);
 
   const services = await pool.query(`
@@ -42,7 +42,6 @@ const getDashboardStats = async () => {
   };
 };
 
-
 // Recent bookings
 const getRecentBookings = async () => {
   const result = await pool.query(`
@@ -50,16 +49,6 @@ const getRecentBookings = async () => {
     FROM bookings
     ORDER BY id DESC
     LIMIT 10
-  `);
-
-  return result.rows;
-};
-
-const getAllProviders = async () => {
-  const result = await pool.query(`
-    SELECT *
-    FROM providers
-    ORDER BY id DESC
   `);
 
   return result.rows;
@@ -76,11 +65,44 @@ const getRecentUsers = async () => {
 
   return result.rows;
 };
+
+// All users
 const getAllUsers = async () => {
   const result = await pool.query(`
     SELECT *
     FROM users
     ORDER BY id DESC
+  `);
+
+  return result.rows;
+};
+
+// Provider profiles joined with their user account.
+// These are the columns confirmed by the provider module.
+const getAllProviders = async () => {
+  const result = await pool.query(`
+    SELECT
+      pp.id,
+      pp.user_id,
+      pp.business_name,
+      pp.experience,
+      pp.description,
+      pp.address,
+      pp.district,
+      pp.citizenship_number,
+      pp.created_at,
+      u.full_name,
+      u.email,
+      u.phone,
+      u.is_verified,
+      CASE
+        WHEN u.is_verified = true THEN 'approved'
+        ELSE 'pending'
+      END AS verification_status,
+      'active' AS status
+    FROM provider_profiles pp
+    INNER JOIN users u ON u.id = pp.user_id
+    ORDER BY pp.id DESC
   `);
 
   return result.rows;
