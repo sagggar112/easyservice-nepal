@@ -12,12 +12,7 @@ const createService = async ({
     (category_id, service_name, description, base_price)
     VALUES ($1,$2,$3,$4)
     RETURNING *`,
-    [
-      category_id,
-      service_name,
-      description,
-      base_price,
-    ]
+    [category_id, service_name, description, base_price]
   );
 
   return result.rows[0];
@@ -31,10 +26,11 @@ const getAllServices = async () => {
         s.service_name,
         s.description,
         s.base_price,
+        s.category_id,
         c.category_name
      FROM services s
-     JOIN categories c
-     ON s.category_id = c.id
+     LEFT JOIN service_categories c
+       ON s.category_id = c.id
      ORDER BY s.id ASC`
   );
 
@@ -44,9 +40,13 @@ const getAllServices = async () => {
 // Get Service By ID
 const getServiceById = async (id) => {
   const result = await pool.query(
-    `SELECT *
-     FROM services
-     WHERE id=$1`,
+    `SELECT
+        s.*,
+        c.category_name
+     FROM services s
+     LEFT JOIN service_categories c
+       ON s.category_id = c.id
+     WHERE s.id=$1`,
     [id]
   );
 
@@ -70,13 +70,7 @@ const updateService = async (
        base_price=$4
      WHERE id=$5
      RETURNING *`,
-    [
-      category_id,
-      service_name,
-      description,
-      base_price,
-      id,
-    ]
+    [category_id, service_name, description, base_price, id]
   );
 
   return result.rows[0];
