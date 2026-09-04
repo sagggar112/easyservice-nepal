@@ -5,11 +5,6 @@ const router = express.Router();
 const {
   dashboard,
   users,
-} = require("./admin.controller");
-
-const {
-  dashboard,
-  users,
   providers,
 } = require("./admin.controller");
 
@@ -18,17 +13,10 @@ const {
 } = require("../../middleware/authMiddleware");
 
 router.get(
-  "/providers",
-  authenticate,
-  providers
-);
-
-router.get(
   "/dashboard",
   authenticate,
   dashboard
 );
-
 
 router.get(
   "/users",
@@ -36,5 +24,10 @@ router.get(
   users
 );
 
+router.get(
+  "/providers",
+  authenticate,
+  providers
+);
 
 module.exports = router;
