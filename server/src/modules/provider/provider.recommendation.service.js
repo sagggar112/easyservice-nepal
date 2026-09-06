@@ -3,9 +3,8 @@ const pool = require("../../config/db");
 /**
  * Explainable provider ranking for EasyService.
  *
- * This is intentionally rule-based for the first production iteration.
- * It gives us a deterministic baseline that can later be replaced or
- * blended with an ML model once enough booking data exists.
+ * Rule-based scoring is the production baseline. It can later be blended
+ * with an ML ranker after enough real booking data has been collected.
  */
 const getRecommendedProviders = async ({ district, limit = 10 }) => {
   const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
@@ -22,17 +21,19 @@ const getRecommendedProviders = async ({ district, limit = 10 }) => {
       p.district,
       p.average_rating,
       p.is_verified,
+      p.is_active,
       COUNT(b.id) FILTER (WHERE b.status = 'Completed') AS completed_bookings,
       COUNT(b.id) FILTER (WHERE b.status = 'Cancelled') AS cancelled_bookings
     FROM providers p
     LEFT JOIN bookings b ON b.provider_id = p.id
-    WHERE p.is_verified = TRUE
+    WHERE p.is_active = TRUE
+      AND p.is_verified = TRUE
       AND ($1::text IS NULL OR LOWER(p.district) = LOWER($1))
     GROUP BY p.id
     ORDER BY
       (
         CASE WHEN $1::text IS NOT NULL AND LOWER(p.district) = LOWER($1) THEN 30 ELSE 0 END
-        + CASE WHEN p.is_verified THEN 20 ELSE 0 END
+        + 20
         + LEAST(COALESCE(p.average_rating, 0) * 8, 40)
         + LEAST(COALESCE(p.experience, 0) * 1.5, 15)
         + LEAST(COUNT(b.id) FILTER (WHERE b.status = 'Completed') * 0.5, 10)
