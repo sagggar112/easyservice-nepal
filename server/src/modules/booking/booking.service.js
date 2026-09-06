@@ -12,7 +12,20 @@ const createBooking = async ({ customer_id, provider_id, service_id, booking_dat
   try {
     await client.query("BEGIN");
 
-    // Prevent two active bookings for the same provider at the same date/time.
+    const provider = await client.query("SELECT id, user_id FROM providers WHERE id=$1", [provider_id]);
+    if (!provider.rows[0]) throw new Error("Provider not found.");
+    const service = await client.query("SELECT id FROM services WHERE id=$1", [service_id]);
+    if (!service.rows[0]) throw new Error("Service not found.");
+
+    // Check the provider's schedule when a weekly schedule exists. Providers
+    // without a configured schedule retain the legacy always-available behavior.
+    const availability = await client.query(
+      `SELECT provider_is_available($1,$2,$3) AS available`,
+      [provider_id, booking_date, booking_time]
+    );
+    if (!availability.rows[0]?.available) throw new Error("Provider is not available at the selected date and time.");
+
+    // Prevent concurrent active bookings for the same provider/date/time.
     const conflict = await client.query(
       `SELECT id FROM bookings
        WHERE provider_id=$1 AND booking_date=$2 AND booking_time=$3
@@ -21,11 +34,6 @@ const createBooking = async ({ customer_id, provider_id, service_id, booking_dat
       [provider_id, booking_date, booking_time]
     );
     if (conflict.rows[0]) throw new Error("This provider is already booked for that date and time.");
-
-    const provider = await client.query("SELECT id, user_id FROM providers WHERE id=$1", [provider_id]);
-    if (!provider.rows[0]) throw new Error("Provider not found.");
-    const service = await client.query("SELECT id FROM services WHERE id=$1", [service_id]);
-    if (!service.rows[0]) throw new Error("Service not found.");
 
     const result = await client.query(
       `INSERT INTO bookings (customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount, status)
