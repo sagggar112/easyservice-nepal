@@ -37,6 +37,14 @@ function Services() {
     return [...result].sort((a, b) => sort === "price-low" ? Number(a.base_price || 0) - Number(b.base_price || 0) : sort === "price-high" ? Number(b.base_price || 0) - Number(a.base_price || 0) : String(a.service_name).localeCompare(String(b.service_name)));
   }, [services, search, category, sort]);
 
+  const formatDuration = (minutes) => {
+    const value = Number(minutes || 60);
+    if (value < 60) return `${value} min`;
+    const hours = Math.floor(value / 60);
+    const remaining = value % 60;
+    return remaining ? `${hours}h ${remaining}m` : `${hours}h`;
+  };
+
   return (
     <main className="services-page">
       <header className="services-header">
@@ -60,6 +68,7 @@ function Services() {
         {service.category_name && <span className="service-category">{service.category_name}</span>}
         <h2>{service.service_name}</h2>
         <p className="service-description">{service.description || "Professional service from trusted EasyService providers."}</p>
+        <div className="service-meta"><span>⏱ {formatDuration(service.duration_minutes)}</span><span>•</span><span>Verified service</span></div>
         <div className="service-footer"><div><small>Starting from</small><strong>Rs. {Number(service.base_price || 0).toLocaleString()}</strong></div><button className="book-btn" onClick={() => navigate(`/booking/${service.id}`, { state: { service } })}>Book Now →</button></div>
       </article>)}</div>}
 
