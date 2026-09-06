@@ -1,19 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-
 import Booking from "./pages/Booking";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
+import SmartMatch from "./pages/SmartMatch";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
-
 import { AuthProvider } from "./context/AuthContext";
-
-// Admin
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
 import Users from "./admin/pages/Users";
@@ -23,19 +19,8 @@ import AdminBookings from "./admin/pages/Bookings";
 import Reviews from "./admin/pages/Reviews";
 import Settings from "./admin/pages/Settings";
 
-// Public Layout
 function PublicLayout({ children }) {
-  return (
-    <>
-      <Navbar />
-
-      <main>
-        {children}
-      </main>
-
-      <Footer />
-    </>
-  );
+  return <><Navbar /><main>{children}</main><Footer /></>;
 }
 
 function App() {
@@ -43,74 +28,14 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-
-          {/* ================= PUBLIC WEBSITE ================= */}
-
-          <Route
-            path="/"
-            element={
-              <PublicLayout>
-                <Home />
-              </PublicLayout>
-            }
-          />
-
-          <Route
-            path="/services"
-            element={
-              <PublicLayout>
-                <Services />
-              </PublicLayout>
-            }
-          />
-
-          <Route
-            path="/booking/:serviceId"
-            element={
-              <PublicLayout>
-                <Booking />
-              </PublicLayout>
-            }
-          />
-
-          <Route
-            path="/login"
-            element={
-              <PublicLayout>
-                <Login />
-              </PublicLayout>
-            }
-          />
-
-          <Route
-            path="/register"
-            element={
-              <PublicLayout>
-                <Register />
-              </PublicLayout>
-            }
-          />
-
-          <Route
-            path="/profile"
-            element={
-              <PublicLayout>
-                <Profile />
-              </PublicLayout>
-            }
-          />
-
-          <Route
-            path="/profile/edit"
-            element={
-              <PublicLayout>
-                <EditProfile />
-              </PublicLayout>
-            }
-          />
-
-          {/* ================= ADMIN PANEL ================= */}
-
+          <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
+          <Route path="/services" element={<PublicLayout><Services /></PublicLayout>} />
+          <Route path="/smart-match" element={<PublicLayout><SmartMatch /></PublicLayout>} />
+          <Route path="/booking/:serviceId" element={<PublicLayout><Booking /></PublicLayout>} />
+          <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
+          <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
+          <Route path="/profile" element={<PublicLayout><Profile /></PublicLayout>} />
+          <Route path="/profile/edit" element={<PublicLayout><EditProfile /></PublicLayout>} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="users" element={<Users />} />
@@ -120,7 +45,6 @@ function App() {
             <Route path="reviews" element={<Reviews />} />
             <Route path="settings" element={<Settings />} />
           </Route>
-
         </Routes>
       </AuthProvider>
     </BrowserRouter>
