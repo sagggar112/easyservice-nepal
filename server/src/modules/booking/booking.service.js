@@ -2,8 +2,10 @@ const pool = require("../../config/db");
 const { canTransition } = require("./booking.lifecycle");
 const { createNotification } = require("../notification/notification.service");
 const { EVENTS, eventForStatus } = require("./booking.notification");
+const { recordCompletedBooking } = require("../earnings/earnings.service");
 
 const isAdmin = (user) => user?.role === "admin" || user?.role_name === "admin";
+const VALID_STATUSES = ["Pending", "Accepted", "In Progress", "Completed", "Cancelled"];
 
 const createBooking = async ({ customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount }) => {
   const result = await pool.query(`INSERT INTO bookings (customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount, status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'Pending') RETURNING *`, [customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount]);
@@ -32,8 +34,9 @@ const getBookingById = async (id, user) => {
 const updateBookingStatus = async (id, status, user) => {
   const booking = await getBookingById(id, user);
   if (!booking) throw new Error("Booking not found or you are not authorized.");
+  if (!VALID_STATUSES.includes(status)) throw new Error("Invalid booking status.");
   if (isAdmin(user)) {
-    if (!["Pending", "Accepted", "In Progress", "Completed", "Cancelled"].includes(status)) throw new Error("Invalid booking status.");
+    // Admins can correct state, but only to a known status.
   } else {
     if (!canTransition(booking.status, status)) throw new Error(`Invalid status transition: ${booking.status} → ${status}`);
     const provider = await pool.query("SELECT id FROM providers WHERE id=$1 AND user_id=$2", [booking.provider_id, user.id]);
@@ -41,6 +44,7 @@ const updateBookingStatus = async (id, status, user) => {
   }
   const result = await pool.query("UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *", [status, id]);
   const updated = result.rows[0];
+  if (status === "Completed" && booking.status !== "Completed") await recordCompletedBooking(updated);
   const event = eventForStatus(status);
   if (event && updated.customer_id) {
     const titleMap = { Accepted: "Booking accepted", "In Progress": "Service in progress", Completed: "Service completed", Cancelled: "Booking cancelled" };
