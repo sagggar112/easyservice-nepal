@@ -12,6 +12,12 @@ const {
   addAvailability,
   listAvailability,
 } = require("./provider.marketplace.controller");
+const {
+  schedule,
+  weekly,
+  blockDate,
+  unblockDate,
+} = require("./providerAvailability.controller");
 
 // Public marketplace endpoints.
 router.get("/recommended", recommend);
@@ -28,5 +34,9 @@ router.delete("/me/services/:serviceId", authenticate, removeService);
 // Provider working schedule.
 router.get("/me/availability", authenticate, listAvailability);
 router.post("/me/availability", authenticate, addAvailability);
+router.get("/me/schedule", authenticate, schedule);
+router.put("/me/schedule/weekly", authenticate, weekly);
+router.post("/me/schedule/blocked-dates", authenticate, blockDate);
+router.delete("/me/schedule/blocked-dates/:id", authenticate, unblockDate);
 
 module.exports = router;
