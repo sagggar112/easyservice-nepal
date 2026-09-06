@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Booking from "./pages/Booking";
+import Bookings from "./pages/Bookings";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import SmartMatch from "./pages/SmartMatch";
@@ -21,9 +22,7 @@ import AdminBookings from "./admin/pages/Bookings";
 import Reviews from "./admin/pages/Reviews";
 import Settings from "./admin/pages/Settings";
 
-function PublicLayout({ children }) {
-  return <><Navbar /><main>{children}</main><Footer /></>;
-}
+function PublicLayout({ children }) { return <><Navbar /><main>{children}</main><Footer /></>; }
 
 function App() {
   return (
@@ -36,6 +35,7 @@ function App() {
           <Route path="/ai-assistant" element={<PublicLayout><AIAssistant /></PublicLayout>} />
           <Route path="/provider/dashboard" element={<PublicLayout><ProviderDashboard /></PublicLayout>} />
           <Route path="/booking/:serviceId" element={<PublicLayout><Booking /></PublicLayout>} />
+          <Route path="/bookings" element={<PublicLayout><Bookings /></PublicLayout>} />
           <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
           <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
           <Route path="/profile" element={<PublicLayout><Profile /></PublicLayout>} />
