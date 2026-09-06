@@ -4,6 +4,7 @@ const router = express.Router();
 const { authenticate } = require("../../middleware/authMiddleware");
 const { becomeProvider } = require("./provider.controller");
 const { recommend } = require("./provider.recommendation.controller");
+const { smartMatch } = require("./provider.matching.controller");
 const {
   addService,
   listServices,
@@ -12,8 +13,9 @@ const {
   listAvailability,
 } = require("./provider.marketplace.controller");
 
-// Public marketplace endpoint.
+// Public marketplace endpoints.
 router.get("/recommended", recommend);
+router.get("/smart-match", smartMatch);
 
 // Authenticated provider onboarding.
 router.post("/", authenticate, becomeProvider);
