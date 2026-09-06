@@ -5,6 +5,7 @@ import Booking from "./pages/Booking";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import SmartMatch from "./pages/SmartMatch";
+import AIAssistant from "./pages/AIAssistant";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -31,6 +32,7 @@ function App() {
           <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
           <Route path="/services" element={<PublicLayout><Services /></PublicLayout>} />
           <Route path="/smart-match" element={<PublicLayout><SmartMatch /></PublicLayout>} />
+          <Route path="/ai-assistant" element={<PublicLayout><AIAssistant /></PublicLayout>} />
           <Route path="/booking/:serviceId" element={<PublicLayout><Booking /></PublicLayout>} />
           <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
           <Route path="/register" element={<PublicLayout><Register /></PublicLayout>} />
