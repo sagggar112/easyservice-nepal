@@ -26,19 +26,20 @@ const calculate = (grossAmount) => {
 const recordCompletedBooking = async (booking) => {
   await ensureEarningsTable();
   const amounts = calculate(booking.total_amount);
-  const result = await pool.query(
-    `INSERT INTO provider_earnings (booking_id, provider_id, gross_amount, commission_amount, provider_amount, status)
-     VALUES ($1,$2,$3,$4,$5,'pending')
-     ON CONFLICT (booking_id) DO NOTHING RETURNING *`,
-    [booking.id, booking.provider_id, amounts.gross_amount, amounts.commission_amount, amounts.provider_amount]
-  );
+  const result = await pool.query(`INSERT INTO provider_earnings (booking_id, provider_id, gross_amount, commission_amount, provider_amount, status) VALUES ($1,$2,$3,$4,$5,'pending') ON CONFLICT (booking_id) DO NOTHING RETURNING *`, [booking.id, booking.provider_id, amounts.gross_amount, amounts.commission_amount, amounts.provider_amount]);
   return result.rows[0] || null;
 };
 
 const getProviderEarnings = async (providerId) => {
   await ensureEarningsTable();
-  const result = await pool.query(`SELECT COALESCE(SUM(provider_amount) FILTER (WHERE status='paid'),0)::numeric AS paid, COALESCE(SUM(provider_amount),0)::numeric AS total, COUNT(*)::int AS jobs FROM provider_earnings WHERE provider_id=$1`, [providerId]);
+  const result = await pool.query(`SELECT COALESCE(SUM(provider_amount) FILTER (WHERE status='paid'),0)::numeric AS paid, COALESCE(SUM(provider_amount) FILTER (WHERE status='pending'),0)::numeric AS pending, COALESCE(SUM(provider_amount),0)::numeric AS total, COALESCE(SUM(commission_amount),0)::numeric AS commission, COUNT(*)::int AS jobs FROM provider_earnings WHERE provider_id=$1`, [providerId]);
   return result.rows[0];
 };
 
-module.exports = { COMMISSION_RATE, calculate, recordCompletedBooking, getProviderEarnings, ensureEarningsTable };
+const getProviderEarningsHistory = async (providerId) => {
+  await ensureEarningsTable();
+  const result = await pool.query(`SELECT pe.id, pe.booking_id, pe.gross_amount, pe.commission_amount, pe.provider_amount, pe.status, pe.created_at, s.service_name FROM provider_earnings pe JOIN bookings b ON b.id=pe.booking_id JOIN services s ON s.id=b.service_id WHERE pe.provider_id=$1 ORDER BY pe.created_at DESC LIMIT 100`, [providerId]);
+  return result.rows;
+};
+
+module.exports = { COMMISSION_RATE, calculate, recordCompletedBooking, getProviderEarnings, getProviderEarningsHistory, ensureEarningsTable };
