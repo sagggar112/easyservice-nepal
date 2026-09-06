@@ -5,33 +5,16 @@ const { authenticate } = require("../../middleware/authMiddleware");
 const { becomeProvider } = require("./provider.controller");
 const { recommend } = require("./provider.recommendation.controller");
 const { smartMatch } = require("./provider.matching.controller");
-const {
-  addService,
-  listServices,
-  removeService,
-  addAvailability,
-  listAvailability,
-} = require("./provider.marketplace.controller");
-const {
-  schedule,
-  weekly,
-  blockDate,
-  unblockDate,
-} = require("./providerAvailability.controller");
+const { addService, listServices, removeService, addAvailability, listAvailability } = require("./provider.marketplace.controller");
+const { schedule, weekly, blockDate, unblockDate, availability } = require("./providerAvailability.controller");
 
-// Public marketplace endpoints.
 router.get("/recommended", recommend);
 router.get("/smart-match", smartMatch);
-
-// Authenticated provider onboarding.
+router.get("/:providerId/availability", availability);
 router.post("/", authenticate, becomeProvider);
-
-// Provider service catalog.
 router.get("/me/services", authenticate, listServices);
 router.post("/me/services", authenticate, addService);
 router.delete("/me/services/:serviceId", authenticate, removeService);
-
-// Provider working schedule.
 router.get("/me/availability", authenticate, listAvailability);
 router.post("/me/availability", authenticate, addAvailability);
 router.get("/me/schedule", authenticate, schedule);
