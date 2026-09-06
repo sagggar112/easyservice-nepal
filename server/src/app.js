@@ -11,6 +11,7 @@ const reviewRoutes = require("./modules/review/review.routes");
 const adminRoutes = require("./modules/admin/admin.routes");
 const aiRoutes = require("./modules/ai/ai.routes");
 const paymentRoutes = require("./modules/paymentSystem/payment.routes");
+const pricingRoutes = require("./modules/pricing/pricing.routes");
 
 const app = express();
 app.use(cors());
@@ -37,6 +38,7 @@ const resolveMiddleware = (r) => {
   ["/api/admin", adminRoutes],
   ["/api/ai", aiRoutes],
   ["/api/payments", paymentRoutes],
+  ["/api/pricing", pricingRoutes],
 ].forEach(([path, router]) => {
   const middleware = resolveMiddleware(router);
   if (middleware) app.use(path, middleware);
