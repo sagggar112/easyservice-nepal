@@ -3,7 +3,6 @@ import { useAuth } from "../context/useAuth";
 
 function Navbar() {
   const navigate = useNavigate();
-
   const { isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
@@ -14,51 +13,26 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-
-        <Link to="/" className="logo">
-          Easy<span>Service</span>
-        </Link>
+        <Link to="/" className="logo">Easy<span>Service</span></Link>
 
         <div className="nav-links">
-
-          <Link to="/">
-            Home
-          </Link>
-
-          <Link to="/services">
-            Services
-          </Link>
+          <Link to="/">Home</Link>
+          <Link to="/services">Services</Link>
+          <Link to="/smart-match">Find a Provider</Link>
+          <Link to="/ai-assistant" className="ai-nav-link">✦ AI Assistant</Link>
 
           {isAuthenticated ? (
             <>
-              <Link to="/profile">
-                My Profile
-              </Link>
-
-              <button
-                onClick={handleLogout}
-                className="logout-btn"
-              >
-                Logout
-              </button>
+              <Link to="/profile">My Profile</Link>
+              <button onClick={handleLogout} className="logout-btn">Logout</button>
             </>
           ) : (
             <>
-              <Link to="/login">
-                Login
-              </Link>
-
-              <Link
-                to="/register"
-                className="register-btn"
-              >
-                Register
-              </Link>
+              <Link to="/login">Login</Link>
+              <Link to="/register" className="register-btn">Get Started</Link>
             </>
           )}
-
         </div>
-
       </div>
     </nav>
   );
