@@ -8,11 +8,39 @@ const isAdmin = (user) => user?.role === "admin" || user?.role_name === "admin";
 const VALID_STATUSES = ["Pending", "Accepted", "In Progress", "Completed", "Cancelled"];
 
 const createBooking = async ({ customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount }) => {
-  const result = await pool.query(`INSERT INTO bookings (customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount, status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'Pending') RETURNING *`, [customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount]);
-  const booking = result.rows[0];
-  const provider = await pool.query("SELECT user_id FROM providers WHERE id=$1", [provider_id]);
-  if (provider.rows[0]?.user_id) await createNotification({ userId: provider.rows[0].user_id, bookingId: booking.id, type: EVENTS.CREATED, title: "New booking request", message: "You have received a new service booking request." });
-  return booking;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Prevent two active bookings for the same provider at the same date/time.
+    const conflict = await client.query(
+      `SELECT id FROM bookings
+       WHERE provider_id=$1 AND booking_date=$2 AND booking_time=$3
+         AND status IN ('Pending','Accepted','In Progress')
+       LIMIT 1 FOR UPDATE`,
+      [provider_id, booking_date, booking_time]
+    );
+    if (conflict.rows[0]) throw new Error("This provider is already booked for that date and time.");
+
+    const provider = await client.query("SELECT id, user_id FROM providers WHERE id=$1", [provider_id]);
+    if (!provider.rows[0]) throw new Error("Provider not found.");
+    const service = await client.query("SELECT id FROM services WHERE id=$1", [service_id]);
+    if (!service.rows[0]) throw new Error("Service not found.");
+
+    const result = await client.query(
+      `INSERT INTO bookings (customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount, status)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,'Pending') RETURNING *`,
+      [customer_id, provider_id, service_id, booking_date, booking_time, address, notes, total_amount]
+    );
+    const booking = result.rows[0];
+    await client.query("COMMIT");
+
+    if (provider.rows[0]?.user_id) await createNotification({ userId: provider.rows[0].user_id, bookingId: booking.id, type: EVENTS.CREATED, title: "New booking request", message: "You have received a new service booking request." });
+    return booking;
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch (_) {}
+    throw error;
+  } finally { client.release(); }
 };
 
 const getAllBookings = async (user) => {
