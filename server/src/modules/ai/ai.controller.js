@@ -1,4 +1,5 @@
 const { understandRequest, smartMatch } = require("./ai.service");
+const { recommendServices } = require("./recommendation.service");
 
 async function understand(req, res) {
   try {
@@ -20,4 +21,15 @@ async function match(req, res) {
   }
 }
 
-module.exports = { understand, match };
+async function recommend(req, res) {
+  try {
+    const description = req.body?.description || req.body?.message;
+    if (!description?.trim()) return res.status(400).json({ success: false, message: "Describe the service you need." });
+    const result = await recommendServices(description, req.body?.limit || 5);
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message || "Unable to recommend services." });
+  }
+}
+
+module.exports = { understand, match, recommend };
