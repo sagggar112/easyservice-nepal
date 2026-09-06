@@ -8,6 +8,7 @@ import Services from "./pages/Services";
 import SmartMatch from "./pages/SmartMatch";
 import AIAssistant from "./pages/AIAssistant";
 import ProviderDashboard from "./pages/ProviderDashboard";
+import ProviderSchedule from "./pages/ProviderSchedule";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -34,6 +35,7 @@ function App() {
           <Route path="/smart-match" element={<PublicLayout><SmartMatch /></PublicLayout>} />
           <Route path="/ai-assistant" element={<PublicLayout><AIAssistant /></PublicLayout>} />
           <Route path="/provider/dashboard" element={<PublicLayout><ProviderDashboard /></PublicLayout>} />
+          <Route path="/provider/schedule" element={<PublicLayout><ProviderSchedule /></PublicLayout>} />
           <Route path="/booking/:serviceId" element={<PublicLayout><Booking /></PublicLayout>} />
           <Route path="/bookings" element={<PublicLayout><Bookings /></PublicLayout>} />
           <Route path="/login" element={<PublicLayout><Login /></PublicLayout>} />
