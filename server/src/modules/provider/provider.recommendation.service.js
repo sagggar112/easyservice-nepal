@@ -1,45 +1,8 @@
 const pool = require("../../config/db");
-
-// Explainable ranking baseline. Keep weights explicit so they can later be
-// tuned from real booking outcomes or replaced/blended with an ML ranker.
 const getRecommendedProviders = async ({ district, serviceId, limit = 10 }) => {
-  const safeLimit = Math.min(Math.max(Number(limit) || 10, 1), 50);
-  const parsedServiceId = serviceId ? Number(serviceId) : null;
-  if (parsedServiceId !== null && (!Number.isInteger(parsedServiceId) || parsedServiceId <= 0)) throw new Error("Invalid serviceId.");
-
-  const result = await pool.query(`
-    SELECT p.id, p.user_id, p.business_name, p.experience, p.description, p.address,
-      p.district, p.average_rating, p.is_verified, p.is_active,
-      ps.price AS provider_price, s.base_price, s.duration_minutes,
-      COUNT(b.id) FILTER (WHERE b.status='Completed') AS completed_bookings,
-      COUNT(b.id) FILTER (WHERE b.status='Cancelled') AS cancelled_bookings
-    FROM providers p
-    LEFT JOIN provider_services ps ON ps.provider_id=p.id AND ps.service_id=$2 AND ps.is_active=TRUE
-    LEFT JOIN services s ON s.id=ps.service_id
-    LEFT JOIN bookings b ON b.provider_id=p.id
-    WHERE p.is_active=TRUE AND p.is_verified=TRUE
-      AND ($1::text IS NULL OR LOWER(p.district)=LOWER($1))
-      AND ($2::integer IS NULL OR ps.provider_id IS NOT NULL)
-    GROUP BY p.id, ps.price, s.base_price, s.duration_minutes
-    ORDER BY (
-      CASE WHEN $1::text IS NOT NULL AND LOWER(p.district)=LOWER($1) THEN 30 ELSE 0 END
-      + 20
-      + LEAST(COALESCE(p.average_rating,0)*8,40)
-      + LEAST(COALESCE(p.experience,0)*1.5,15)
-      + LEAST(COUNT(b.id) FILTER (WHERE b.status='Completed')*0.5,10)
-      - LEAST(COUNT(b.id) FILTER (WHERE b.status='Cancelled')*0.75,10)
-      + CASE WHEN ps.price IS NOT NULL THEN 10 ELSE 0 END
-    ) DESC, p.average_rating DESC NULLS LAST, p.experience DESC NULLS LAST
-    LIMIT $3`, [district || null, parsedServiceId, safeLimit]);
-
-  return result.rows.map((provider) => {
-    const rating=Number(provider.average_rating||0), experience=Number(provider.experience||0);
-    const completed=Number(provider.completed_bookings||0), cancelled=Number(provider.cancelled_bookings||0);
-    const localBoost=district&&provider.district&&provider.district.toLowerCase()===district.toLowerCase()?30:0;
-    const serviceBoost=provider.provider_price!==null?10:0;
-    const score=Math.round(Math.min(100,localBoost+20+Math.min(rating*8,40)+Math.min(experience*1.5,15)+Math.min(completed*.5,10)-Math.min(cancelled*.75,10)+serviceBoost)*10)/10;
-    return {...provider, provider_price:provider.provider_price===null?null:Number(provider.provider_price), completed_bookings:completed, cancelled_bookings:cancelled, match_score:score};
-  });
+  const safeLimit=Math.min(Math.max(Number(limit)||10,1),50); const parsedServiceId=serviceId?Number(serviceId):null;
+  if(parsedServiceId!==null&&(!Number.isInteger(parsedServiceId)||parsedServiceId<=0))throw new Error("Invalid serviceId.");
+  const result=await pool.query(`SELECT p.id,p.user_id,p.business_name,p.experience,p.description,p.address,p.district,p.average_rating,p.is_verified,p.is_active,ps.price AS provider_price,s.base_price,COALESCE(ps.duration_minutes,s.duration_minutes,60) AS duration_minutes,COUNT(b.id) FILTER(WHERE b.status='Completed') AS completed_bookings,COUNT(b.id) FILTER(WHERE b.status='Cancelled') AS cancelled_bookings FROM providers p LEFT JOIN provider_services ps ON ps.provider_id=p.id AND ps.service_id=$2 AND ps.is_active=TRUE LEFT JOIN services s ON s.id=ps.service_id LEFT JOIN bookings b ON b.provider_id=p.id WHERE p.is_active=TRUE AND p.is_verified=TRUE AND($1::text IS NULL OR LOWER(p.district)=LOWER($1)) AND($2::integer IS NULL OR ps.provider_id IS NOT NULL) GROUP BY p.id,ps.price,s.base_price,s.duration_minutes,ps.duration_minutes ORDER BY(CASE WHEN $1::text IS NOT NULL AND LOWER(p.district)=LOWER($1) THEN 30 ELSE 0 END+20+LEAST(COALESCE(p.average_rating,0)*8,40)+LEAST(COALESCE(p.experience,0)*1.5,15)+LEAST(COUNT(b.id) FILTER(WHERE b.status='Completed')*.5,10)-LEAST(COUNT(b.id) FILTER(WHERE b.status='Cancelled')*.75,10)+CASE WHEN ps.price IS NOT NULL THEN 10 ELSE 0 END) DESC,p.average_rating DESC NULLS LAST,p.experience DESC NULLS LAST LIMIT $3`,[district||null,parsedServiceId,safeLimit]);
+  return result.rows.map(provider=>{const rating=Number(provider.average_rating||0),experience=Number(provider.experience||0),completed=Number(provider.completed_bookings||0),cancelled=Number(provider.cancelled_bookings||0);const localBoost=district&&provider.district&&provider.district.toLowerCase()===district.toLowerCase()?30:0;const serviceBoost=provider.provider_price!==null?10:0;const score=Math.round(Math.min(100,localBoost+20+Math.min(rating*8,40)+Math.min(experience*1.5,15)+Math.min(completed*.5,10)-Math.min(cancelled*.75,10)+serviceBoost)*10)/10;return {...provider,provider_price:provider.provider_price===null?null:Number(provider.provider_price),duration_minutes:Number(provider.duration_minutes||60),completed_bookings:completed,cancelled_bookings:cancelled,match_score:score};});
 };
-
 module.exports={getRecommendedProviders};
